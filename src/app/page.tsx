@@ -25,6 +25,7 @@ export default function Home() {
       <input
         type="text"
         value={input}
+        className="text-zinc-900"
         onChange={(e) => setInput(e.target.value)}
       />
     </div>
