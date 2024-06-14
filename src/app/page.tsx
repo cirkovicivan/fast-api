@@ -1,5 +1,13 @@
 "use client";
 
+import {
+  Command,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandEmpty,
+  CommandList,
+} from "@/components/ui/command";
 import { useEffect, useState } from "react";
 
 export default function Home() {
@@ -15,19 +23,57 @@ export default function Home() {
       if (!input) return setSearchResults(undefined);
 
       const res = await fetch(`/api/search?q=${input}`);
+
+      const data = (await res.json()) as {
+        results: string[];
+        duration: number;
+      };
+
+      setSearchResults(data);
     };
 
     fetchData();
   }, [input]);
 
   return (
-    <div>
-      <input
-        type="text"
-        value={input}
-        className="text-zinc-900"
-        onChange={(e) => setInput(e.target.value)}
-      />
-    </div>
+    <main className="h-screen w-screen grainy">
+      <div className="flex flex-col gap-6 items-center pt-32 duration-500 animate-in animate fade-in-5 slide-in-from-bottom-2.5">
+        <h1 className="text-5xl tracking-tight font-bold">SpeedSearch</h1>
+        <p className="text-zinc-600 text-lg max-w-prose text-center">
+          A high-performance API built with Hono, Next.js and Cloudflare. <br />
+          Type a query below and get your results in miliseconds.
+        </p>
+
+        <div className="w-full max-w-md">
+          <Command>
+            <CommandInput
+              value={input}
+              onValueChange={setInput}
+              placeholder="Search countries..."
+              className="placeholder:text-zinc-500"
+            />
+            <CommandList>
+              {searchResults?.results.length === 0 ? (
+                <CommandEmpty>No results found.</CommandEmpty>
+              ) : null}
+
+              {searchResults?.results ? (
+                <CommandGroup heading="Results">
+                  {searchResults?.results.map((result) => (
+                    <CommandItem
+                      key={result}
+                      value={result}
+                      onSelect={setInput}
+                    >
+                      {result}
+                    </CommandItem>
+                  ))}
+                </CommandGroup>
+              ) : null}
+            </CommandList>
+          </Command>
+        </div>
+      </div>
+    </main>
   );
 }
