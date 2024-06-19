@@ -33,7 +33,7 @@ app.get("/search", async (c) => {
     if (!query) {
       return c.json(
         {
-          message: "Invalid searc query",
+          message: "Invalid search query",
         },
         { status: 400 }
       );
@@ -41,6 +41,7 @@ app.get("/search", async (c) => {
 
     const res = [];
 
+    // Rank of the first member that matches the query
     const rank = await redis.zrank("terms", query);
 
     if (!rank != null && rank != undefined) {
@@ -77,5 +78,8 @@ app.get("/search", async (c) => {
   }
 });
 
+// For vercel integration
 export const GET = handle(app);
+
+// For cloudflare workers
 export default app as never;
