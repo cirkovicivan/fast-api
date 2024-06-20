@@ -6,7 +6,7 @@ A <b>globally</b> distributed <b>high-performance</b> API with search functional
 
 See a live demo [here](https://fast-api-black.vercel.app).
 
-![screenshot of fast-api homepage](https://i.imgur.com/aIi9L8v.png)
+![screenshot of fast-api homepage](https://i.imgur.com/3oqHPNk.png)
 
 ## 🤖 Introduction
 
@@ -14,13 +14,13 @@ Welcome to the fast-api project, where I use advanced web technology to deliver 
 
 I <b>researched</b> which database to use by comparing their performance in my API, and only one came out on top. Additionally, I opted for <b>Hono</b>, an excellent choice for integrating with <b>Cloudflare Workers</b> due to its <b>speed</b> and <b>performance</b>. To further enhance speed and performance, I also utilized an <b>efficient package manager</b>.
 
-<center>
+<p align="center">
+  <img src="https://i.imgur.com/ougglil.png" alt="The Performance Comparison of Different Databases">
+</p>
 
-![The Performance Comparison of Different Databases](https://i.imgur.com/ougglil.png)
-
-<b>(The Performance Comparison of Different Databases)</b>
-
-</center>
+<p align="center">
+  <b>(The Performance Comparison of Different Databases)</b>
+</p>
 
 ## ⚙️ Tech Stack
 
