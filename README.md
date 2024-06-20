@@ -1,36 +1,48 @@
-This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# fast-api
 
-## Getting Started
+A <b>globally</b> distributed <b>high-performance</b> API with search functionallity.
 
-First, run the development server:
+## 🌐Try it out
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+See a live demo [here](https://fast-api-black.vercel.app).
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+![screenshot of fast-api homepage](https://i.imgur.com/aIi9L8v.png)
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## 🤖 Introduction
 
-This project uses [`next/font`](https://nextjs.org/docs/basic-features/font-optimization) to automatically optimize and load Inter, a custom Google Font.
+Welcome to the fast-api project, where I use advanced web technology to deliver <b>super-fast</b> API responses and <b>powerful features</b>, ensuring an exceptional user experience <b>globally</b>.
 
-## Learn More
+I <b>researched</b> which database to use by comparing their performance in my API, and only one came out on top. Additionally, I opted for <b>Hono</b>, an excellent choice for integrating with <b>Cloudflare Workers</b> due to its <b>speed</b> and <b>performance</b>. To further enhance speed and performance, I also utilized an <b>efficient package manager</b>.
 
-To learn more about Next.js, take a look at the following resources:
+<center>
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+![The Performance Comparison of Different Databases](https://i.imgur.com/ougglil.png)
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js/) - your feedback and contributions are welcome!
+<b>(The Performance Comparison of Different Databases)</b>
 
-## Deploy on Vercel
+</center>
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## ⚙️ Tech Stack
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/deployment) for more details.
+- **Cloudflare Workers**: Globally distributes serverless code.
+- **Hono**: Lightweight backend framework.
+- **Next**: Frontend framework.
+- **TypeScript**: Enhances code quality and maintainability.
+- **pnpm**: Ultrafast and performant package manager.
+- **Tailwind**: Styling and animating the frontend.
+- **Redis**: Fast Database.
+- **Shadcn-UI**: UI library for React.
+
+## 🔋 List of Features
+
+- **DB Seeding Script**: Populates database with initial data.
+
+- **Cloudflare Workers Integration**: Deploys serverless functions globally with low latency.
+
+- **Fast Search Functionality**: Enables rapid data retrieval through optimized search capabilities.
+
+- **Responsive Design**: Ensures seamless adaptation of UI across all devices.
+
+- **Tailwind CSS Animations**: Implements smooth animations for enhanced frontend interaction.
+
+and many more features that ensure a high-performance and user-friendly API.
