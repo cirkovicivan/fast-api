@@ -1,6 +1,6 @@
 # fast-api
 
-A <b>globally</b> distributed <b>high-performance</b> API with search functionallity.
+A <b>globally</b> distributed <b>high-performance</b> API with search functionallity.⚡️
 
 ## 🌐Try it out
 
