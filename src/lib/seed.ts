@@ -1,9 +1,13 @@
 import { Redis } from "@upstash/redis";
 
-const redis = new Redis({
-  url: "https://unbiased-ewe-46980.upstash.io",
-  token: "AbeEAAIncDExYzZlYmU0N2FjMGE0NzVjODJmYzU5ODRjM2QxZDYzYXAxNDY5ODA",
-});
+const url = process.env.UPSTASH_REDIS_REST_URL;
+const token = process.env.UPSTASH_REDIS_REST_TOKEN;
+
+if (!url || !token) {
+  throw new Error("Missing Upstash Redis environment variables");
+}
+
+const redis = new Redis({ url, token });
 
 const countryList = [
   "Afghanistan",
@@ -257,19 +261,29 @@ const countryList = [
   "Åland Islands",
 ];
 
-countryList.forEach((country) => {
-  const term = country.toUpperCase();
-  const terms: { score: 0; member: string }[] = [];
+async function main() {
+  for (const country of countryList) {
+    const term = country.toUpperCase();
 
-  for (let i = 0; i <= term.length; i++) {
-    terms.push({ score: 0, member: term.substring(0, i) });
+    for (let i = 1; i <= term.length; i++) {
+      await redis.zadd("terms", {
+        score: 0,
+        member: term.slice(0, i),
+      });
+    }
+
+    await redis.zadd("terms", {
+      score: 0,
+      member: `${term}*`,
+    });
   }
-  terms.push({ score: 0, member: term + "*" });
 
-  const populateDB = async () => {
-    // @ts-ignore
-    await redis.zadd("terms", ...terms);
-  };
+  console.log(
+    `Seed completed. Unique terms in Redis: ${await redis.zcard("terms")}`
+  );
+}
 
-  populateDB();
+main().catch((error) => {
+  console.error("Seed failed:", error);
+  process.exitCode = 1;
 });
