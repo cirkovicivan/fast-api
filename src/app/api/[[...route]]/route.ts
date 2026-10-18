@@ -3,6 +3,7 @@ import { Hono } from "hono";
 import { env } from "hono/adapter";
 import { cors } from "hono/cors";
 import { handle } from "hono/vercel";
+import { createClient } from "@supabase/supabase-js";
 
 export const runtime = "edge";
 
@@ -11,6 +12,8 @@ const app = new Hono().basePath("/api");
 type EnvConfig = {
   UPSTASH_REDIS_REST_URL: string;
   UPSTASH_REDIS_REST_TOKEN: string;
+  SUPABASE_URL: string;
+  SUPABASE_KEY: string;
 };
 
 app.use("/*", cors());
@@ -74,6 +77,51 @@ app.get("/search", async (c) => {
         message: "Something went wrong",
       },
       { status: 500 }
+    );
+  }
+});
+
+app.get("/search-postgres", async (c) => {
+  try {
+    const { SUPABASE_URL, SUPABASE_KEY } = env<EnvConfig>(c);
+
+    const query = c.req.query("q")?.trim();
+
+    if (!query) {
+      return c.json({ message: "Invalid search query" }, 400);
+    }
+
+    const start = performance.now();
+
+    const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    const { data, error } = await supabase
+      .from("countries")
+      .select("name")
+      .ilike("name", `${query}%`)
+      .order("name")
+      .limit(101);
+
+    if (error) {
+      console.error(error);
+      return c.json(
+        { results: [], message: "Something went wrong" },
+        500
+      );
+    }
+
+    const duration = performance.now() - start;
+
+    return c.json({
+      results: data.map((country: { name: string }) => country.name),
+      duration,
+    });
+  } catch (error) {
+    console.error(error);
+
+    return c.json(
+      { results: [], message: "Something went wrong" },
+      500
     );
   }
 });
