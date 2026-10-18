@@ -13,7 +13,7 @@ type EnvConfig = {
   UPSTASH_REDIS_REST_URL: string;
   UPSTASH_REDIS_REST_TOKEN: string;
   SUPABASE_URL: string;
-  SUPABASE_KEY: string;
+  SUPABASE_SECRET_KEY: string;
 };
 
 app.use("/*", cors());
@@ -83,7 +83,7 @@ app.get("/search", async (c) => {
 
 app.get("/search-postgres", async (c) => {
   try {
-    const { SUPABASE_URL, SUPABASE_KEY } = env<EnvConfig>(c);
+    const { SUPABASE_URL, SUPABASE_SECRET_KEY } = env<EnvConfig>(c);
 
     const query = c.req.query("q")?.trim();
 
@@ -92,8 +92,8 @@ app.get("/search-postgres", async (c) => {
     }
 
     const start = performance.now();
-
-    const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+    console.log(query)
+    const supabase = createClient(SUPABASE_URL, SUPABASE_SECRET_KEY);
 
     const { data, error } = await supabase
       .from("countries")
