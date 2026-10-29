@@ -1,17 +1,19 @@
 "use client";
 
+import { useEffect, useRef, useState } from "react";
+
 import {
   Command,
+  CommandEmpty,
   CommandGroup,
   CommandInput,
   CommandItem,
-  CommandEmpty,
   CommandList,
-} from "@/components/ui/command";
-import { useEffect, useRef, useState } from "react";
-
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import Image from "next/image";
+} from "@/components/shadcn/command";
+import { DatabaseSelector } from "@/components/custom/database-selector";
+import { MetricsGrid } from "@/components/custom/metrics-grid";
+import { HeaderSection } from "@/components/custom/header-section";
+import { Kbd, KbdGroup } from "@/components/ui/kbd";
 
 type Database = "redis" | "postgres";
 
@@ -21,6 +23,9 @@ const DATABASE_ENDPOINTS: Record<Database, string> = {
 };
 
 export default function Home() {
+  const [isOpen, setIsOpen] = useState(false);
+  const searchRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
   const [input, setInput] = useState<string>("");
   const [db, setDb] = useState<Database>("redis");
 
@@ -31,6 +36,41 @@ export default function Home() {
 
   const latestRequest = useRef(0);
 
+  useEffect(() => {
+    function handleKeyDown(event: KeyboardEvent) {
+      if ((event.ctrlKey || event.metaKey) && event.key == "Enter") {
+        event.preventDefault();
+
+        inputRef.current?.focus();
+        setIsOpen(true);
+      }
+    }
+
+    document.addEventListener("keydown", handleKeyDown);
+
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (
+        searchRef.current &&
+        !searchRef.current.contains(event.target as Node)
+      ) {
+        setIsOpen(false);
+      }
+    }
+
+    if (isOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [isOpen]);
+
+  // Fetch search results
   useEffect(() => {
     const query = input.trim();
     const requestId = ++latestRequest.current;
@@ -62,6 +102,7 @@ export default function Home() {
 
         if (latestRequest.current === requestId) {
           setSearchResults(data);
+          setIsOpen(true); // Open dropdown when data arrives
         }
       } catch (error) {
         if (latestRequest.current === requestId) {
@@ -74,90 +115,81 @@ export default function Home() {
   }, [input, db]);
 
   return (
-    <main className="h-screen w-screen white">
-      <div className="flex flex-col gap-6 items-center pt-32 duration-500 animate-in animate fade-in-5 slide-in-from-bottom-2.5">
-        <h1 className="text-5xl tracking-tight font-bold">SpeedSearch⚡</h1>
-        <p className="text-zinc-600 text-lg max-w-prose text-center">
-          A high-performance API built with Hono, Next.js and Cloudflare. <br />
-          Type a query below and get your results in miliseconds.
-        </p>
+    <main className="min-h-screen w-full bg-zinc-950 text-zinc-100 flex flex-col items-center justify-between py-12 px-4 sm:px-6">
+      <div className="w-full max-w-4xl flex flex-col gap-8 duration-500 animate-in fade-in-5 slide-in-from-bottom-2.5">
+        <HeaderSection />
 
-        <div className="mx-auto w-full max-w-2xl">
-          <Command className="rounded-xl border shadow-sm">
-            <CommandInput
-              value={input}
-              onValueChange={setInput}
-              placeholder="Search countries..."
-              className="placeholder:text-zinc-500"
-            />
+        <section className="w-full flex flex-col gap-4">
+          <div className="w-full mb-4">
+            <DatabaseSelector selectedDb={db} onSelectDb={setDb} />
+          </div>
 
-            <CommandList className="max-h-80">
-              {searchResults?.results.length === 0 ? (
-                <CommandEmpty>No results found.</CommandEmpty>
-              ) : null}
+          <div ref={searchRef} className="relative w-full">
+            <Command className="overflow-visible bg-card rounded-xl shadow-inner">
+              <CommandInput
+                ref={inputRef}
+                value={input}
+                onValueChange={(val) => {
+                  setInput(val);
+                  setIsOpen(true);
+                }}
+                onFocus={() => setIsOpen(true)}
+                placeholder={`Search countries using ${db.toUpperCase()}...`}
+                className="text-sm placeholder:text-zinc-500 text-zinc-200"
+              />
 
-              {searchResults?.results && (
-                <CommandGroup heading="Results">
-                  {searchResults.results.map((result) => (
-                    <CommandItem
-                      key={result}
-                      value={result}
-                      onSelect={setInput}
-                    >
-                      {result}
-                    </CommandItem>
-                  ))}
-                </CommandGroup>
+              {isOpen && searchResults?.results && (
+                <div className="absolute top-full left-0 right-0 z-50 mt-2 rounded-xl border border-card bg-card p-1 shadow-2xl backdrop-blur-md overflow-hidden">
+                  <CommandList className="max-h-60 overflow-y-auto">
+                    {searchResults.results.length === 0 ? (
+                      <CommandEmpty className="p-4 text-center text-xs text-zinc-500">
+                        No matching results found.
+                      </CommandEmpty>
+                    ) : (
+                      <CommandGroup heading="Results">
+                        {searchResults.results.map((result) => (
+                          <CommandItem
+                            key={result}
+                            value={result}
+                            onSelect={(val) => {
+                              setInput(val);
+                              setIsOpen(false);
+                            }}
+                            className="cursor-pointer px-3 py-2 text-sm text-zinc-300 aria-selected:bg-emerald-950/40 aria-selected:text-emerald-400 rounded-md transition-colors"
+                          >
+                            {result}
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    )}
+                  </CommandList>
+
+                  <div className="shrink-0 border-t border-zinc-800/80 bg-zinc-900/40 px-3 py-2 flex items-center justify-between text-xs text-zinc-400 font-mono">
+                    <span>
+                      Returned{" "}
+                      <strong className="text-zinc-200">
+                        {searchResults.results.length}
+                      </strong>{" "}
+                      items
+                    </span>
+                    <span className="text-emerald-400 font-semibold bg-emerald-950/60 px-2 py-0.5 rounded border border-emerald-500/20">
+                      {searchResults.duration.toFixed(0)} ms
+                    </span>
+                  </div>
+                </div>
               )}
-            </CommandList>
+            </Command>
+          </div>
+        </section>
 
-            {searchResults?.results && (
-              <div className="shrink-0">
-                <div className="h-px w-full bg-zinc-200" />
-                <p className="p-2 text-xs text-zinc-500">
-                  Found {searchResults.results.length} results in{" "}
-                  {searchResults.duration.toFixed(0)}ms
-                </p>
-              </div>
-            )}
-          </Command>
-        </div>
-
-        <ToggleGroup
-          variant="outline"
-          value={[db]}
-          onValueChange={(values) => {
-            const value = values[0];
-            if (value === "redis" || value === "postgres") {
-              setDb(value);
-            }
-          }}
-          className="gap-3"
-        >
-          <ToggleGroupItem
-            value="redis"
-            aria-label="Select Redis"
-            className="flex h-24 w-28 flex-col items-center justify-center gap-3 rounded-xl border border-red-500/20 bg-red-500/5 text-muted-foreground transition-all hover:border-red-500/50 hover:bg-red-500/10 data-pressed:border-red-500 data-pressed:bg-red-500/15 data-pressed:text-red-500"
-          >
-            <Image src="/redis-logo.svg" alt="Redis" width={30} height={30} />
-            <span className="text-sm font-semibold">Redis</span>
-          </ToggleGroupItem>
-
-          <ToggleGroupItem
-            value="postgres"
-            aria-label="Select Postgres"
-            className="flex h-24 w-28 flex-col items-center justify-center gap-3 rounded-xl border border-sky-500/20 bg-sky-500/5 text-muted-foreground transition-all hover:border-sky-500/50 hover:bg-sky-500/10 data-pressed:border-sky-500 data-pressed:bg-sky-500/15 data-pressed:text-sky-500"
-          >
-            <Image
-              src="/postgres-logo.svg"
-              alt="Postgres"
-              width={30}
-              height={30}
-            />
-            <span className="text-sm font-semibold">Postgres</span>
-          </ToggleGroupItem>
-        </ToggleGroup>
+        <section className="w-full pt-2">
+          <MetricsGrid />
+        </section>
       </div>
+
+      <footer className="text-zinc-500 text-xs font-mono pt-8 pb-0 duration-500 animate-in fade-in-5 slide-in-from-bottom-2.5">
+        Built with Hono &bull; Next.js &bull; Cloudflare Workers
+      </footer>
     </main>
   );
 }
