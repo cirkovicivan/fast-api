@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Badge } from "@/components/shadcn/badge";
 
 import {
   Command,
@@ -14,6 +13,7 @@ import {
 import { DatabaseSelector } from "@/components/custom/database-selector";
 import { MetricsGrid } from "@/components/custom/metrics-grid";
 import { HeaderSection } from "@/components/custom/header-section";
+import { Kbd, KbdGroup } from "@/components/ui/kbd";
 
 type Database = "redis" | "postgres";
 
@@ -23,6 +23,9 @@ const DATABASE_ENDPOINTS: Record<Database, string> = {
 };
 
 export default function Home() {
+  const [isOpen, setIsOpen] = useState(false);
+  const searchRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
   const [input, setInput] = useState<string>("");
   const [db, setDb] = useState<Database>("redis");
 
@@ -33,6 +36,41 @@ export default function Home() {
 
   const latestRequest = useRef(0);
 
+  useEffect(() => {
+    function handleKeyDown(event: KeyboardEvent) {
+      if ((event.ctrlKey || event.metaKey) && event.key == "Enter") {
+        event.preventDefault();
+
+        inputRef.current?.focus();
+        setIsOpen(true);
+      }
+    }
+
+    document.addEventListener("keydown", handleKeyDown);
+
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (
+        searchRef.current &&
+        !searchRef.current.contains(event.target as Node)
+      ) {
+        setIsOpen(false);
+      }
+    }
+
+    if (isOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [isOpen]);
+
+  // Fetch search results
   useEffect(() => {
     const query = input.trim();
     const requestId = ++latestRequest.current;
@@ -64,6 +102,7 @@ export default function Home() {
 
         if (latestRequest.current === requestId) {
           setSearchResults(data);
+          setIsOpen(true); // Open dropdown when data arrives
         }
       } catch (error) {
         if (latestRequest.current === requestId) {
@@ -77,30 +116,29 @@ export default function Home() {
 
   return (
     <main className="min-h-screen w-full bg-zinc-950 text-zinc-100 flex flex-col items-center justify-between py-12 px-4 sm:px-6">
-      {/* Central Interactive Canvas */}
       <div className="w-full max-w-4xl flex flex-col gap-8 duration-500 animate-in fade-in-5 slide-in-from-bottom-2.5">
-        {/* Hero Section */}
         <HeaderSection />
 
-        {/* Control Deck & Search Field */}
         <section className="w-full flex flex-col gap-4">
-          {/* Target Engine Bar */}
           <div className="w-full mb-4">
             <DatabaseSelector selectedDb={db} onSelectDb={setDb} />
           </div>
 
-          {/* Search Input with Non-Shifting Popover */}
-          <div className="relative w-full">
+          <div ref={searchRef} className="relative w-full">
             <Command className="overflow-visible bg-card rounded-xl shadow-inner">
               <CommandInput
+                ref={inputRef}
                 value={input}
-                onValueChange={setInput}
+                onValueChange={(val) => {
+                  setInput(val);
+                  setIsOpen(true);
+                }}
+                onFocus={() => setIsOpen(true)}
                 placeholder={`Search countries using ${db.toUpperCase()}...`}
                 className="text-sm placeholder:text-zinc-500 text-zinc-200"
               />
 
-              {/* Floating Results Popover to prevent layout shift */}
-              {searchResults?.results && (
+              {isOpen && searchResults?.results && (
                 <div className="absolute top-full left-0 right-0 z-50 mt-2 rounded-xl border border-card bg-card p-1 shadow-2xl backdrop-blur-md overflow-hidden">
                   <CommandList className="max-h-60 overflow-y-auto">
                     {searchResults.results.length === 0 ? (
@@ -113,7 +151,10 @@ export default function Home() {
                           <CommandItem
                             key={result}
                             value={result}
-                            onSelect={setInput}
+                            onSelect={(val) => {
+                              setInput(val);
+                              setIsOpen(false);
+                            }}
                             className="cursor-pointer px-3 py-2 text-sm text-zinc-300 aria-selected:bg-emerald-950/40 aria-selected:text-emerald-400 rounded-md transition-colors"
                           >
                             {result}
@@ -141,14 +182,12 @@ export default function Home() {
           </div>
         </section>
 
-        {/* Real-Time Metrics Visualizer */}
         <section className="w-full pt-2">
           <MetricsGrid />
         </section>
       </div>
 
-      {/* Footer */}
-      <footer className="text-zinc-500 text-xs font-mono pt-8 pb-2">
+      <footer className="text-zinc-500 text-xs font-mono pt-8 pb-0 duration-500 animate-in fade-in-5 slide-in-from-bottom-2.5">
         Built with Hono &bull; Next.js &bull; Cloudflare Workers
       </footer>
     </main>

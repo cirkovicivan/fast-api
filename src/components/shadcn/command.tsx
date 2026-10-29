@@ -13,6 +13,7 @@ import {
 } from "@/components/shadcn/dialog";
 import { InputGroup, InputGroupAddon } from "@/components/shadcn/input-group";
 import { SearchIcon, CheckIcon } from "lucide-react";
+import { Kbd } from "../ui/kbd";
 
 function Command({
   className,
@@ -81,6 +82,8 @@ function CommandInput({
         <InputGroupAddon>
           <SearchIcon className="size-4 shrink-0 opacity-50" />
         </InputGroupAddon>
+
+        <Kbd className="shrink-0 border p-2">⌘ + Enter</Kbd>
       </InputGroup>
     </div>
   );
