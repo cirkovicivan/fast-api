@@ -13,7 +13,6 @@ import {
 import { DatabaseSelector } from "@/components/custom/database-selector";
 import { MetricsGrid } from "@/components/custom/metrics-grid";
 import { HeaderSection } from "@/components/custom/header-section";
-import { Kbd, KbdGroup } from "@/components/ui/kbd";
 
 type Database = "redis" | "postgres";
 
@@ -22,13 +21,19 @@ const DATABASE_ENDPOINTS: Record<Database, string> = {
   postgres: "search-postgres",
 };
 
+export interface LatencyDataPoint {
+  timestamp: number | string;
+  latency: number;
+}
+
 export default function Home() {
   const [isOpen, setIsOpen] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const [input, setInput] = useState<string>("");
   const [db, setDb] = useState<Database>("redis");
-
+  const [chartData, setChartData] = useState<LatencyDataPoint[]>([]);
+  const [dbExecutionTime, setDbExecutionTime] = useState<number>();
   const [searchResults, setSearchResults] = useState<{
     results: string[];
     duration: number;
@@ -84,7 +89,8 @@ export default function Home() {
       try {
         const endpoint = DATABASE_ENDPOINTS[db];
         const url = new URL(
-          `https://fastapi.cirko007ivan.workers.dev/api/${endpoint}`,
+          `http://localhost:3000/api/${endpoint}`,
+          // `https://fastapi.cirko007ivan.workers.dev/api/${endpoint}`,
         );
 
         url.searchParams.set("q", query);
@@ -98,10 +104,16 @@ export default function Home() {
         const data = (await res.json()) as {
           results: string[];
           duration: number;
+          dbExecutionTime: number;
         };
 
         if (latestRequest.current === requestId) {
-          setSearchResults(data);
+          setChartData((prev) => [
+            ...prev,
+            { timestamp: Date.now(), latency: data.duration },
+          ]);
+          setSearchResults({ results: data.results, duration: data.duration });
+          setDbExecutionTime(data.dbExecutionTime);
           setIsOpen(true); // Open dropdown when data arrives
         }
       } catch (error) {
@@ -121,7 +133,11 @@ export default function Home() {
 
         <section className="w-full flex flex-col gap-4">
           <div className="w-full mb-4">
-            <DatabaseSelector selectedDb={db} onSelectDb={setDb} />
+            <DatabaseSelector
+              selectedDb={db}
+              onSelectDb={setDb}
+              onChartData={setChartData}
+            />
           </div>
 
           <div ref={searchRef} className="relative w-full">
@@ -183,7 +199,10 @@ export default function Home() {
         </section>
 
         <section className="w-full pt-2">
-          <MetricsGrid />
+          <MetricsGrid
+            chartData={chartData}
+            dbExecutionTime={dbExecutionTime}
+          />
         </section>
       </div>
 

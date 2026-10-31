@@ -11,7 +11,7 @@ const jetbrainsMono = JetBrains_Mono({
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Apex — Real-Time Database Benchmarking & Performance Analytics",
+  title: "Apex Real-Time Database Benchmarking & Performance Analytics",
   description:
     "Compare query performance, execution latency, and throughput between Redis and PostgreSQL in real-time with millisecond precision.",
   keywords: [
@@ -27,7 +27,7 @@ export const metadata: Metadata = {
     title: "Apex — Real-Time Database Benchmarking",
     description:
       "Analyze real-time execution metrics and latency comparisons between Redis and PostgreSQL.",
-    url: "https://your-domain.com", // Replace with your actual deployed URL
+    url: "https://your-domain.com",
     siteName: "Apex",
     type: "website",
   },

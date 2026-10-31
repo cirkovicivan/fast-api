@@ -1,7 +1,7 @@
 "use client";
 
 import { TrendingUp } from "lucide-react";
-import { CartesianGrid, Line, LineChart, XAxis } from "recharts";
+import { CartesianGrid, Line, LineChart } from "recharts";
 
 import {
   Card,
@@ -18,30 +18,22 @@ import {
   type ChartConfig,
 } from "@/components/shadcn/chart";
 
-export const description = "A line chart";
-
-const chartData = [
-  { month: "January", desktop: 186 },
-  { month: "February", desktop: 305 },
-  { month: "March", desktop: 237 },
-  { month: "April", desktop: 73 },
-  { month: "May", desktop: 209 },
-  { month: "June", desktop: 214 },
-];
+export const description =
+  "Chronological comparison of query durations under cold and warm conditions.";
 
 const chartConfig = {
-  desktop: {
-    label: "latency",
+  latency: {
+    label: "Latency(ms)",
     color: "var(--chart-1)",
   },
 } satisfies ChartConfig;
 
-export function ChartLineDefault() {
+export function ChartLineDefault({ chartData }: any) {
   return (
     <Card className="w-auto">
       <CardHeader>
-        <CardTitle>Line Chart</CardTitle>
-        <CardDescription>January - June 2024</CardDescription>
+        <CardTitle>Database Latency</CardTitle>
+        <CardDescription>{description}</CardDescription>
       </CardHeader>
       <CardContent>
         <ChartContainer config={chartConfig}>
@@ -54,21 +46,14 @@ export function ChartLineDefault() {
             }}
           >
             <CartesianGrid vertical={false} />
-            <XAxis
-              dataKey="month"
-              tickLine={false}
-              axisLine={false}
-              tickMargin={8}
-              tickFormatter={(value) => value.slice(0, 3)}
-            />
             <ChartTooltip
               cursor={false}
               content={<ChartTooltipContent hideLabel />}
             />
             <Line
-              dataKey="desktop"
+              dataKey="latency"
               type="natural"
-              stroke="var(--color-desktop)"
+              stroke="var(--color-latency)"
               strokeWidth={2}
               dot={false}
             />

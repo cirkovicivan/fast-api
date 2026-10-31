@@ -38,14 +38,18 @@ app.get("/search", async (c) => {
         {
           message: "Invalid search query",
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     const res = [];
 
     // Rank of the first member that matches the query
+    const dbExecutionTimeStart = performance.now();
+
     const rank = await redis.zrank("terms", query);
+
+    const dbExecutionTimeEnd = performance.now();
 
     if (!rank != null && rank != undefined) {
       const temp = await redis.zrange<string[]>("terms", rank, rank + 100);
@@ -67,6 +71,7 @@ app.get("/search", async (c) => {
     return c.json({
       results: res,
       duration: end - start,
+      dbExecutionTime: dbExecutionTimeEnd - dbExecutionTimeStart,
     });
   } catch (error) {
     console.error(error);
@@ -76,7 +81,7 @@ app.get("/search", async (c) => {
         results: [],
         message: "Something went wrong",
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 });
@@ -92,8 +97,10 @@ app.get("/search-postgres", async (c) => {
     }
 
     const start = performance.now();
-    console.log(query)
+    console.log(query);
     const supabase = createClient(SUPABASE_URL, SUPABASE_SECRET_KEY);
+
+    const dbExecutionTimeStart = performance.now();
 
     const { data, error } = await supabase
       .from("countries")
@@ -102,27 +109,25 @@ app.get("/search-postgres", async (c) => {
       .order("name")
       .limit(101);
 
+    const dbExecutionTimeEnd = performance.now();
+
     if (error) {
       console.error(error);
-      return c.json(
-        { results: [], message: "Something went wrong" },
-        500
-      );
+      return c.json({ results: [], message: "Something went wrong" }, 500);
     }
 
     const duration = performance.now() - start;
+    const dbExecutionTime = dbExecutionTimeEnd - dbExecutionTimeStart;
 
     return c.json({
       results: data.map((country: { name: string }) => country.name),
       duration,
+      dbExecutionTime,
     });
   } catch (error) {
     console.error(error);
 
-    return c.json(
-      { results: [], message: "Something went wrong" },
-      500
-    );
+    return c.json({ results: [], message: "Something went wrong" }, 500);
   }
 });
 

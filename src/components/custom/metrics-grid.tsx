@@ -8,7 +8,8 @@ import {
 import { Zap, Clock, HardDrive } from "lucide-react";
 import { ChartLineDefault } from "../shadcn/chart-line-default";
 
-export function MetricsGrid() {
+export function MetricsGrid({ chartData, dbExecutionTime }: any) {
+  console.log(dbExecutionTime);
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 w-full items-stretch">
       {/* Left Column Stack: Metric Cards (Takes up 1 column on large screens) */}
@@ -41,7 +42,8 @@ export function MetricsGrid() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-white">
-              1.1 <span className="text-sm font-normal text-zinc-500">ms</span>
+              {dbExecutionTime?.toFixed(2) || 0}
+              <span className="text-sm font-normal text-zinc-500">ms</span>
             </div>
             <p className="text-xs text-zinc-500 mt-1 font-mono">
               Raw query processing speed
@@ -72,7 +74,7 @@ export function MetricsGrid() {
       {/* Right Column: Chart (Takes up 2 columns on large screens, spanning full height) */}
       <div className="lg:col-span-2 flex">
         <div className="w-full h-full">
-          <ChartLineDefault />
+          <ChartLineDefault chartData={chartData} />
         </div>
       </div>
     </div>

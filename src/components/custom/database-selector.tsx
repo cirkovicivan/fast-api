@@ -1,5 +1,6 @@
 "use client";
 
+import { LatencyDataPoint } from "@/app/page";
 import { ToggleGroup, ToggleGroupItem } from "@/components/shadcn/toggle-group";
 import Image from "next/image";
 
@@ -8,11 +9,13 @@ type Database = "redis" | "postgres";
 interface DatabaseSelectorProps {
   selectedDb: Database;
   onSelectDb: (db: Database) => void;
+  onChartData: (data: LatencyDataPoint[]) => void;
 }
 
 export function DatabaseSelector({
   selectedDb,
   onSelectDb,
+  onChartData,
 }: DatabaseSelectorProps) {
   return (
     <div className="flex flex-col gap-1.5 w-full">
@@ -26,6 +29,7 @@ export function DatabaseSelector({
           const value = values.find((v) => v !== selectedDb) || values[0];
           if (value === "redis" || value === "postgres") {
             onSelectDb(value);
+            onChartData([]);
           }
         }}
         className="grid grid-cols-2 gap-2 w-full"
