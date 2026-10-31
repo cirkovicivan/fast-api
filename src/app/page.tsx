@@ -88,9 +88,10 @@ export default function Home() {
     async function fetchData() {
       try {
         const endpoint = DATABASE_ENDPOINTS[db];
+
         const url = new URL(
-          `http://localhost:3000/api/${endpoint}`,
-          // `https://fastapi.cirko007ivan.workers.dev/api/${endpoint}`,
+          `/api/${endpoint}`,
+          process.env.NEXT_PUBLIC_API_URL,
         );
 
         url.searchParams.set("q", query);
