@@ -3,11 +3,9 @@ import { Hono } from "hono";
 import { env } from "hono/adapter";
 import { cors } from "hono/cors";
 import { handle } from "hono/vercel";
-import { createClient } from "@supabase/supabase-js";
+import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
 export const runtime = "edge";
-
-const app = new Hono().basePath("/api");
 
 type EnvConfig = {
   UPSTASH_REDIS_REST_URL: string;
@@ -16,91 +14,97 @@ type EnvConfig = {
   SUPABASE_SECRET_KEY: string;
 };
 
+const app = new Hono().basePath("/api");
+
 app.use("/*", cors());
+
+let cachedRedis: Redis | null = null;
+let cachedSupabase: SupabaseClient | null = null;
+
+function getRedisClient(config: EnvConfig): Redis {
+  if (!cachedRedis) {
+    cachedRedis = new Redis({
+      url: config.UPSTASH_REDIS_REST_URL,
+      token: config.UPSTASH_REDIS_REST_TOKEN,
+    });
+  }
+  return cachedRedis;
+}
+
+function getSupabaseClient(config: EnvConfig): SupabaseClient {
+  if (!cachedSupabase) {
+    cachedSupabase = createClient(
+      config.SUPABASE_URL,
+      config.SUPABASE_SECRET_KEY,
+    );
+  }
+  return cachedSupabase;
+}
 
 app.get("/search", async (c) => {
   try {
-    const { UPSTASH_REDIS_REST_TOKEN, UPSTASH_REDIS_REST_URL } =
-      env<EnvConfig>(c);
-
     const start = performance.now();
-    // -------------------------------------------------
+    const config = env<EnvConfig>(c);
 
-    const redis = new Redis({
-      token: UPSTASH_REDIS_REST_TOKEN,
-      url: UPSTASH_REDIS_REST_URL,
-    });
+    const redis = getRedisClient(config);
 
     const query = c.req.query("q")?.toUpperCase();
-
     if (!query) {
-      return c.json(
-        {
-          message: "Invalid search query",
-        },
-        { status: 400 },
-      );
+      return c.json({ message: "Invalid search query" }, 400);
     }
 
-    const res = [];
-
-    // Rank of the first member that matches the query
-    const dbExecutionTimeStart = performance.now();
+    const res: string[] = [];
+    const dbExecutionStart = performance.now();
 
     const rank = await redis.zrank("terms", query);
 
-    const dbExecutionTimeEnd = performance.now();
+    const dbExecutionEnd = performance.now();
 
-    if (!rank != null && rank != undefined) {
+    if (rank != null) {
       const temp = await redis.zrange<string[]>("terms", rank, rank + 100);
 
       for (const el of temp) {
-        if (!el.startsWith(query)) {
-          break;
-        }
-
+        if (!el.startsWith(query)) break;
         if (el.endsWith("*")) {
           res.push(el.substring(0, el.length - 1));
         }
       }
     }
 
-    // -------------------------------------------------
-    const end = performance.now();
+    const duration = performance.now() - start;
+    const dbExecutionTime = dbExecutionEnd - dbExecutionStart;
+
+    const responseBody = JSON.stringify({
+      results: res,
+      duration,
+      dbExecutionTime,
+    });
+    const payloadBytes = new TextEncoder().encode(responseBody).length;
 
     return c.json({
       results: res,
-      duration: end - start,
-      dbExecutionTime: dbExecutionTimeEnd - dbExecutionTimeStart,
+      duration,
+      dbExecutionTime,
+      payloadBytes,
     });
   } catch (error) {
     console.error(error);
-
-    return c.json(
-      {
-        results: [],
-        message: "Something went wrong",
-      },
-      { status: 500 },
-    );
+    return c.json({ results: [], message: "Something went wrong" }, 500);
   }
 });
 
 app.get("/search-postgres", async (c) => {
   try {
-    const { SUPABASE_URL, SUPABASE_SECRET_KEY } = env<EnvConfig>(c);
+    const start = performance.now();
+    const config = env<EnvConfig>(c);
+    const supabase = getSupabaseClient(config);
 
     const query = c.req.query("q")?.trim();
-
     if (!query) {
       return c.json({ message: "Invalid search query" }, 400);
     }
 
-    const start = performance.now();
-    console.log(query);
-    const supabase = createClient(SUPABASE_URL, SUPABASE_SECRET_KEY);
-
-    const dbExecutionTimeStart = performance.now();
+    const dbExecutionStart = performance.now();
 
     const { data, error } = await supabase
       .from("countries")
@@ -109,24 +113,28 @@ app.get("/search-postgres", async (c) => {
       .order("name")
       .limit(101);
 
-    const dbExecutionTimeEnd = performance.now();
+    const dbExecutionEnd = performance.now();
 
     if (error) {
       console.error(error);
       return c.json({ results: [], message: "Something went wrong" }, 500);
     }
 
+    const results = data.map((country: { name: string }) => country.name);
     const duration = performance.now() - start;
-    const dbExecutionTime = dbExecutionTimeEnd - dbExecutionTimeStart;
+    const dbExecutionTime = dbExecutionEnd - dbExecutionStart;
+
+    const responseBody = JSON.stringify({ results, duration, dbExecutionTime });
+    const payloadBytes = new TextEncoder().encode(responseBody).length;
 
     return c.json({
-      results: data.map((country: { name: string }) => country.name),
+      results,
       duration,
       dbExecutionTime,
+      payloadBytes,
     });
   } catch (error) {
     console.error(error);
-
     return c.json({ results: [], message: "Something went wrong" }, 500);
   }
 });
