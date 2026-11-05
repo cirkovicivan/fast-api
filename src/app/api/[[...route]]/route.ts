@@ -4,6 +4,7 @@ import { env } from "hono/adapter";
 import { cors } from "hono/cors";
 import { handle } from "hono/vercel";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import { measurePayload } from "../utils/metrics";
 
 export const runtime = "edge";
 
@@ -53,7 +54,7 @@ app.get("/search", async (c) => {
       return c.json({ message: "Invalid search query" }, 400);
     }
 
-    const res: string[] = [];
+    const res: { name: string }[] = [];
     const dbExecutionStart = performance.now();
 
     const rank = await redis.zrank("terms", query);
@@ -66,7 +67,7 @@ app.get("/search", async (c) => {
       for (const el of temp) {
         if (!el.startsWith(query)) break;
         if (el.endsWith("*")) {
-          res.push(el.substring(0, el.length - 1));
+          res.push({ name: el.substring(0, el.length - 1) });
         }
       }
     }
@@ -74,18 +75,13 @@ app.get("/search", async (c) => {
     const duration = performance.now() - start;
     const dbExecutionTime = dbExecutionEnd - dbExecutionStart;
 
-    const responseBody = JSON.stringify({
-      results: res,
-      duration,
-      dbExecutionTime,
-    });
-    const payloadBytes = new TextEncoder().encode(responseBody).length;
+    const payloadKb: number = measurePayload(res);
 
     return c.json({
       results: res,
       duration,
       dbExecutionTime,
-      payloadBytes,
+      payloadKb,
     });
   } catch (error) {
     console.error(error);
@@ -120,18 +116,16 @@ app.get("/search-postgres", async (c) => {
       return c.json({ results: [], message: "Something went wrong" }, 500);
     }
 
-    const results = data.map((country: { name: string }) => country.name);
     const duration = performance.now() - start;
     const dbExecutionTime = dbExecutionEnd - dbExecutionStart;
 
-    const responseBody = JSON.stringify({ results, duration, dbExecutionTime });
-    const payloadBytes = new TextEncoder().encode(responseBody).length;
+    const payloadKb: number = measurePayload(data);
 
     return c.json({
-      results,
+      results: data,
       duration,
       dbExecutionTime,
-      payloadBytes,
+      payloadKb,
     });
   } catch (error) {
     console.error(error);

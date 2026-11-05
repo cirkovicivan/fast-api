@@ -26,6 +26,13 @@ export interface LatencyDataPoint {
   latency: number;
 }
 
+export interface SearchResponse {
+  results: { name: string }[];
+  duration: number;
+  dbExecutionTime: number;
+  payloadKb: number;
+}
+
 export default function Home() {
   const [isOpen, setIsOpen] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
@@ -33,11 +40,7 @@ export default function Home() {
   const [input, setInput] = useState<string>("");
   const [db, setDb] = useState<Database>("redis");
   const [chartData, setChartData] = useState<LatencyDataPoint[]>([]);
-  const [dbExecutionTime, setDbExecutionTime] = useState<number>();
-  const [searchResults, setSearchResults] = useState<{
-    results: string[];
-    duration: number;
-  }>();
+  const [searchData, setSearchData] = useState<SearchResponse | null>(null);
 
   const latestRequest = useRef(0);
 
@@ -81,7 +84,7 @@ export default function Home() {
     const requestId = ++latestRequest.current;
 
     if (!query) {
-      setSearchResults(undefined);
+      setSearchData(null);
       return;
     }
 
@@ -103,9 +106,10 @@ export default function Home() {
         }
 
         const data = (await res.json()) as {
-          results: string[];
+          results: { name: string }[];
           duration: number;
           dbExecutionTime: number;
+          payloadKb: number;
         };
 
         if (latestRequest.current === requestId) {
@@ -113,8 +117,13 @@ export default function Home() {
             ...prev,
             { timestamp: Date.now(), latency: data.duration },
           ]);
-          setSearchResults({ results: data.results, duration: data.duration });
-          setDbExecutionTime(data.dbExecutionTime);
+          setSearchData({
+            results: data.results,
+            duration: data.duration,
+            dbExecutionTime: data.dbExecutionTime,
+            payloadKb: data.payloadKb,
+          });
+
           setIsOpen(true); // Open dropdown when data arrives
         }
       } catch (error) {
@@ -155,26 +164,26 @@ export default function Home() {
                 className="text-sm placeholder:text-zinc-500 text-zinc-200"
               />
 
-              {isOpen && searchResults?.results && (
+              {isOpen && searchData?.results && (
                 <div className="absolute top-full left-0 right-0 z-50 mt-2 rounded-xl border border-card bg-card p-1 shadow-2xl backdrop-blur-md overflow-hidden">
                   <CommandList className="max-h-60 overflow-y-auto">
-                    {searchResults.results.length === 0 ? (
+                    {searchData?.results.length === 0 ? (
                       <CommandEmpty className="p-4 text-center text-xs text-zinc-500">
                         No matching results found.
                       </CommandEmpty>
                     ) : (
                       <CommandGroup heading="Results">
-                        {searchResults.results.map((result) => (
+                        {searchData?.results.map((result) => (
                           <CommandItem
-                            key={result}
-                            value={result}
+                            key={result.name}
+                            value={result.name}
                             onSelect={(val) => {
                               setInput(val);
                               setIsOpen(false);
                             }}
                             className="cursor-pointer px-3 py-2 text-sm text-zinc-300 aria-selected:bg-emerald-950/40 aria-selected:text-emerald-400 rounded-md transition-colors"
                           >
-                            {result}
+                            {result.name}
                           </CommandItem>
                         ))}
                       </CommandGroup>
@@ -185,12 +194,12 @@ export default function Home() {
                     <span>
                       Returned{" "}
                       <strong className="text-zinc-200">
-                        {searchResults.results.length}
+                        {searchData?.results.length}
                       </strong>{" "}
                       items
                     </span>
                     <span className="text-emerald-400 font-semibold bg-emerald-950/60 px-2 py-0.5 rounded border border-emerald-500/20">
-                      {searchResults.duration.toFixed(0)} ms
+                      {searchData?.duration.toFixed(0)} ms
                     </span>
                   </div>
                 </div>
@@ -202,7 +211,8 @@ export default function Home() {
         <section className="w-full pt-2">
           <MetricsGrid
             chartData={chartData}
-            dbExecutionTime={dbExecutionTime}
+            dbExecutionTime={searchData?.dbExecutionTime}
+            payloadKb={searchData?.payloadKb}
           />
         </section>
       </div>

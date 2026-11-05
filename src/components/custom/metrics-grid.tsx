@@ -3,13 +3,11 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
-  CardDescription,
 } from "@/components/shadcn/card";
 import { Zap, Clock, HardDrive } from "lucide-react";
 import { ChartLineDefault } from "../shadcn/chart-line-default";
 
-export function MetricsGrid({ chartData, dbExecutionTime }: any) {
-  console.log(dbExecutionTime);
+export function MetricsGrid({ chartData, dbExecutionTime, payloadKb }: any) {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 w-full items-stretch">
       {/* Left Column Stack: Metric Cards (Takes up 1 column on large screens) */}
@@ -61,11 +59,12 @@ export function MetricsGrid({ chartData, dbExecutionTime }: any) {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-white">
-              1.4 <span className="text-sm font-normal text-zinc-500">KB</span>
+              {payloadKb || 0}{" "}
+              <span className="text-sm font-normal text-zinc-500">KB</span>
             </div>
             <p className="text-xs text-emerald-400 mt-1 font-mono flex items-center gap-1">
-              <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
-              Warm Cache Hit
+              <span className="h-1.5 w-1.5 mr-2 rounded-full bg-emerald-400" />
+              UTF-8 Encoded
             </p>
           </CardContent>
         </Card>
