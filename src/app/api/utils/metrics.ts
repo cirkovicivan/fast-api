@@ -5,8 +5,8 @@ export function measurePayload(data: { name: string }[]) {
     const jsonString = JSON.stringify(data);
     const payloadBytes = new TextEncoder().encode(jsonString).length;
 
-    payloadKb += Number(payloadBytes / 1024);
+    payloadKb += payloadBytes / 1024;
   });
 
-  return payloadKb.toFixed(2);
+  return Number(payloadKb.toFixed(2));
 }
